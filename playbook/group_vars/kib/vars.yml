@@ -1,0 +1,4 @@
+kibana_version: "7.10.1"
+kibana_home: "/usr/share/kibana/{{ kibana_version }}"
+kibana_url: "https://mirror.yandex.ru/mirrors/elastic/7/pool/main/k/kibana/kibana-{{ kibana_version }}-amd64.deb"
+kibana_package: kibana-7.10.1-amd64.deb

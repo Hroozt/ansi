@@ -3,7 +3,7 @@ elk:
   hosts:
     ubuntu:
       ansible_connection: docker
-kbn:
+kib:
   hosts:
     kbn:
       ansible_connection: docker
