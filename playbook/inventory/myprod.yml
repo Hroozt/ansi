@@ -1,5 +1,9 @@
 ---
-  dockertest:
-    hosts:
-      ubuntu:
-        ansible_connecton: docker
+elk:
+  hosts:
+    ubuntu:
+      ansible_connection: docker
+kbn:
+  hosts:
+    kbn:
+      ansible_connection: docker

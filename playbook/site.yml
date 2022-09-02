@@ -14,13 +14,13 @@
       until: download_java_binaries is succeeded
       tags: java
     - name: Ensure installation dir exists
-      become: true
+      #become: true
       file:
         state: directory
         path: "{{ java_home }}"
       tags: java
     - name: Extract java in the installation directory
-      become: true
+      #become: true
       unarchive:
         copy: false
         src: "/tmp/jdk-{{ java_jdk_version }}.tar.gz"
@@ -30,13 +30,13 @@
       tags:
         - java
     - name: Export environment variables
-      become: true
+      #become: true
       template:
         src: jdk.sh.j2
         dest: /etc/profile.d/jdk.sh
       tags: java
 - name: Install Elasticsearch
-  hosts: elasticsearch
+  hosts: all
   tasks:
     - name: Upload tar.gz Elasticsearch from remote URL
       get_url:
@@ -55,7 +55,7 @@
         path: "{{ elastic_home }}"
       tags: elastic
     - name: Extract Elasticsearch in the installation directory
-      become: true
+      #become: true
       unarchive:
         copy: false
         src: "/tmp/elasticsearch-{{ elastic_version }}-linux-x86_64.tar.gz"
@@ -65,8 +65,45 @@
       tags:
         - elastic
     - name: Set environment Elastic
-      become: true
+      #become: true
       template:
         src: templates/elk.sh.j2
         dest: /etc/profile.d/elk.sh
       tags: elastic
+- name: Install Kibana
+  hosts: kbn
+  tasks:
+    - name: Check if kibana is installed
+      command: dpkg-query -W kibana
+      register: kibana_check_deb
+      failed_when: kibana_check_deb.rc > 1
+      changed_when: kibana_check_deb.rc == 1
+      tags: kibana
+    - name: Download kibana
+      get_url:
+        url="https://mirror.yandex.ru/mirrors/elastic/7/pool/main/k/kibana/kibana-{{ kibana_version }}-amd64.deb"
+        dest="/var/kibana-{{ kibana_version }}.deb"
+      when: kibana_check_deb.rc == 1 and kibana_url
+      tags: kibana
+    - name: Install kibana-{{ kibana_version }}
+      apt: deb="/var/kibana-{{ kibana_version }}.deb"
+      when: kibana_check_deb.rc == 1
+      notify:
+        - Start Kibana
+      register: "kibana_installed"
+      tags: kibana
+    - name: Tweak kibana's service file for PID file permissions
+      lineinfile:
+        path: /etc/systemd/system/kibana.service
+        insertafter: '^\[Service\]'
+        line: 'RuntimeDirectory=kibana'
+      tags: kibana
+    - name: Copy Kibana configuration, version 7.x+
+      template:
+        src: kbn.yml.j2
+        dest: "/etc/kibana/kibana.yml"
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart kibana
+      tags: kibana
